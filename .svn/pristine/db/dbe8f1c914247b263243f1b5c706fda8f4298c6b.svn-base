@@ -1,0 +1,275 @@
+package jcha224_pr2;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+
+/**
+ * Represents a restaurant.
+ * @author John Chang
+ * @version Autumn 2016
+ */
+public class Restaurant {
+
+	// The number of waiting customers that qualifies for a new register to be open.
+    private int myQueueTNum;
+    
+    // Max number of registers available in the store.
+    private int myMaxRNum;
+    
+    // The number of available registers.
+    private int myOpenRegisters;
+    
+    // List of all registers.
+    private List<Register> myRegisters;
+    
+    // List of customers waiting in cash register line.
+    private MyQueue<Customer> myWaitLine;
+    
+    // List of finished customers.
+    private List<Customer> myCustomers;
+    
+    // Number of customers that left.
+    private int myLeaveCustomers;
+    
+    // Food waiting line.
+    private List<Customer> myFoodWaitingLine;
+    
+    /**
+     * Constructs the restaurant object.
+     * @param theQueueTNum maximum number of registers.
+     * @param theMaxRNum number that indicates when a register should open.
+     */
+	public Restaurant(int theQueueTNum, int theMaxRNum) {
+		myQueueTNum = theQueueTNum;
+		myMaxRNum = theMaxRNum;
+		myOpenRegisters = 1;
+		myRegisters = new LinkedList<Register>();
+		for(int i = 0; i < theMaxRNum; i++) {
+			myRegisters.add(new Register());
+		}
+		myRegisters.get(0).setStatus(true);
+		myCustomers = new LinkedList<Customer>();
+		myLeaveCustomers = 0;
+		myFoodWaitingLine = new LinkedList<Customer>();
+		myWaitLine = new MyQueue<Customer>();
+		
+	}
+
+	/**
+	 * Adds a customer to the list of customers waiting at the registers.
+	 * @param theOrderTime order preparation time.
+	 * @param theRegisterTime time spent at the register.
+	 */
+	public void addCustomer(int theOrderTime, int theRegisterTime) {
+		Customer current = new Customer();
+		current.setFoodWait(theOrderTime);
+		current.setRegWait(theRegisterTime);
+		myWaitLine.enqueue((Customer) current);
+		
+	}
+
+	/**
+	 * Updates the food wait line, register line, and the register.
+	 */
+	public void updateLines() {
+		updateFood();
+		updateRegisters();
+		setRegisters();
+		updateCustomers();
+		
+	}
+
+	/**
+	 * Updates the register line.
+	 */
+	public void updateRegisters() {
+		Iterator<Register> itr = myRegisters.iterator();
+		while(itr.hasNext()) {
+			Register temp  = itr.next();
+			if(temp.checkFinish()) {
+				myFoodWaitingLine.add(temp.getCustomer());
+				temp.setPresent(false);
+			}
+			
+
+		}
+		
+	}
+	
+	/**
+	 * Sets the number of registers that should be open.
+	 */
+	public void setRegisters() {
+		Iterator<Register> itr = myRegisters.iterator();
+		while(itr.hasNext()) {
+			Register temp = itr.next();
+			if(myWaitLine.getSize()/myQueueTNum > getOpenRegisters()) {
+				temp.setStatus(true);
+			} else if(myWaitLine.getSize()/myQueueTNum < getOpenRegisters()) {
+				temp.setStatus(false);
+			}
+			if(getOpenRegisters() == 0) {
+				temp.setStatus(true);
+			}
+		updateCustomers();
+		}
+	}
+	
+	
+	/**
+	 * Returns the number of available registers.
+	 * @return available registers.
+	 */
+	public int getOpenRegisters() {
+		int count = 0;
+		Iterator<Register> itr = myRegisters.iterator();
+		while (itr.hasNext()) {
+			if(itr.next().getStatus()) {
+				count++;
+			}
+		}
+		return count;
+	}
+	
+	/**
+	 * Updates the customers line.
+	 */
+	public void updateCustomers() {
+		if(myWaitLine.getSize() > 0) {
+			Iterator<Register> itr = myRegisters.iterator();
+			while(itr.hasNext()){
+				Register temp = itr.next();
+				if(!temp.checkPresent() && temp.getStatus()) {
+					temp.addCustomer(myWaitLine.dequeue());
+				}
+			}
+			
+		}
+	}
+	
+	/**
+	 * Updates the food wait line.
+	 */
+	public void updateFood() {
+		Iterator<Customer> itr = myFoodWaitingLine.iterator();
+		for(int i = 0; i < 4; i++) {
+			if(itr.hasNext()) {
+				Customer temp  = itr.next();
+				if(temp.getfoodWait() < 1) {
+					myCustomers.add(temp);
+					itr.remove();
+				}
+			}
+
+		}
+	}
+	
+	/**
+	 * Updates the wait times on each customer.
+	 */
+	public void updateTimes() {
+		updateWaitTime();
+		updateFoodTime();
+		updateRegisterTime();
+	}
+
+	/**
+	 * Updates the customers at the register.
+	 */
+	private void updateRegisterTime() {
+		Iterator<Register> itr = myRegisters.iterator();
+		while(itr.hasNext()) {
+			Register curr = itr.next();
+			Customer temp  = curr.checkCustomer();
+			temp.updateLineWait();
+			if(temp.getServingTime() != 0) {
+				curr.updateRegister();
+			}
+		}
+		
+	}
+
+	/**
+	 * Updates the customers at the food pick-up line.
+	 */
+	private void updateFoodTime() {
+		Iterator<Customer> itr = myFoodWaitingLine.iterator();
+		while(itr.hasNext()) {
+			itr.next().updateFoodWait();
+		
+		}
+		
+	}
+
+	/**
+	 * Updates the customers at the register line.
+	 */
+	private void updateWaitTime() {
+		Iterator<Customer> itr = myWaitLine.iterator();
+		while(itr.hasNext()) {
+			itr.next().updateLineWait();
+		}
+		
+	}
+
+	/**
+	 * Checks whether the wait line is full.
+	 * @return true if full otherwise false.
+	 */
+	public boolean waitLineFull() {
+		return myWaitLine.isFull();
+	}
+
+	/**
+	 * Adds to the number of customers that left.
+	 */
+	public void incrementNotServed() {
+		myLeaveCustomers++;
+	}
+
+	/**
+	 * Creates a file that contains the details of this restaurant.
+	 */
+	public void writeStats() {
+		java.io.File file;
+		java.io.PrintWriter writer = null;
+		try {
+			file = new java.io.File("jcha224-pr2-OutputStats.txt");
+			writer = new PrintWriter(file);
+			writer.println("Queue threshold: " + myQueueTNum);
+			writer.println("Max number of registers: " + myMaxRNum);
+			writer.println("Number of total served customers: " + myCustomers.size());
+			writer.println("Number of customers who left without ordering: " + myLeaveCustomers);
+			writer.println("Average turnaround time of served customers in minutes: " + this.averageTime());
+			writer.println("Number of customers still waiting for food: " + myFoodWaitingLine.size());
+			writer.println("Number of open registers: " + getOpenRegisters());
+			writer.println("Number of customers still waiting at the register: " + myRegisters.size());
+			writer.println("Number of customers still waiting at the cash registers waiting line: " 
+			+ myWaitLine.getSize());
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} finally {
+			if(writer != null) {
+				writer.close();
+			}
+		}
+		
+	}
+
+	public float averageTime() {
+		Iterator<Customer> itr = myCustomers.iterator();
+		float totalTime = 0;
+		while(itr.hasNext()){
+			totalTime = totalTime + itr.next().calculateOverallTime();
+		}
+		
+		if(totalTime > 0) {
+			totalTime = totalTime/myCustomers.size() ;
+		}
+		return totalTime;
+	}
+	
+}

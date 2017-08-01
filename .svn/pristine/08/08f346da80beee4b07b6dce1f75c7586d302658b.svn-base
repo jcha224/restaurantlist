@@ -1,0 +1,55 @@
+package jcha224_pr2;
+
+public class Register {
+
+	private Customer myCurrent;
+	
+	private boolean myPresent;
+	
+	private int myRegisterTime;
+	
+	private boolean myStatus;
+	
+	public Register() {
+		myCurrent = new Customer();
+		myRegisterTime = 0;
+		myPresent = true;
+		myStatus = false;
+	}
+	
+	public boolean checkFinish() {
+		return myRegisterTime >= myCurrent.getServingTime();
+	}
+	
+	public boolean checkPresent() {
+		return myPresent;
+	}
+	
+	public void updateRegister() {
+		myRegisterTime++;
+	}
+	
+	public boolean getStatus() {
+		return myStatus;
+	}
+	
+	public void setStatus(boolean theStatus) {
+		myStatus = theStatus;
+	}
+	
+	public Customer getCustomer() {
+		myPresent = false;
+		return myCurrent;
+	}
+	
+	public Customer checkCustomer() {
+		return myCurrent;
+	}
+	
+	public void addCustomer(Customer theCustomer) {
+		myCurrent = theCustomer;
+		myRegisterTime = 0;
+		myPresent = true;
+		
+	}
+}

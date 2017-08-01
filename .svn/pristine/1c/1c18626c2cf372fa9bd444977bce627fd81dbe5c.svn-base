@@ -1,0 +1,9 @@
+Queue threshold: 10
+Max number of registers: 7
+Number of total served customers: 396
+Number of customers who left without ordering: 0
+Average turnaround time of served customers in minutes: 1.9040405
+Number of customers still waiting for food: 225
+Number of open registers: 1
+Number of customers still waiting at the register: 1
+Number of customers still waiting at the cash registers waiting line: 20
